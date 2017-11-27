@@ -77,6 +77,7 @@ class Matrix(object):
         left_matrix.path.append((readable_for_delete,True))
         return {"left":left_matrix,"right":negative_matrix}
 
+
     def compute2(self):
         print(self.matrix)
         pos_max = self.pos_of_max_penaltie()
@@ -86,7 +87,7 @@ class Matrix(object):
         right_matrix = Matrix(self.matrix.copy(),self.row_mapping,self.column_mapping,right_border)
         right_matrix.path.append((readable_for_delete,False))
 
-
+        print((self.row_mapping[for_delete[0]], self.column_mapping[for_delete[1]]))
 
         for each in self.path:
             if not (each[1]):
@@ -101,7 +102,6 @@ class Matrix(object):
 
         self.deleteRowAndColumn(for_delete[0], for_delete[1])
 
-        print((self.row_mapping[for_delete[0]],self.column_mapping[for_delete[1]]))
 
         reduction_constants = self.reduction()
 
@@ -224,8 +224,8 @@ class Matrix(object):
         c_m = np.array(self.column_mapping)
         r_m = np.array(self.row_mapping)
 
-        c_m = c_m[c_m!=column_number]
-        r_m = r_m[r_m!=row_number]
+        c_m = c_m[c_m!=c_m[column_number]]
+        r_m = r_m[r_m!=r_m[row_number]]
 
         self.column_mapping = list(c_m)
         self.row_mapping = list(r_m)
@@ -235,8 +235,17 @@ class Matrix(object):
             print("Column mapping: ", self.column_mapping)
             print("Row mapping: ", self.row_mapping)
 
+
     def deleteRowAndColumn(self,row_number,column_number):
-        self.matrix.A[column_number][row_number] = float("Inf")
+
+        readable_row = self.row_mapping[row_number]
+        readable_column = self.column_mapping[column_number]
+
+        row_number_inf = self.find_by_value(self.row_mapping, readable_column)
+        col_number_inf = self.find_by_value(self.column_mapping, readable_row)
+
+        if (row_number_inf >= 0) and (col_number_inf >= 0):
+            self.matrix.A[row_number_inf][col_number_inf] = float("Inf")
 
         self.matrix = np.delete(self.matrix,row_number,axis=0)
         self.matrix = np.delete(self.matrix,column_number,axis=1)
@@ -248,7 +257,7 @@ class Matrix(object):
         if (self.Log):
             print(self.matrix)
 
-    # #Не читаемый номер строки и столбца
+    # #Not readable path
     # def deletePath(self,row_number,column_number):
     #     # row_number_after_delete = -1
     #     # for i in range(len(self.row_mapping)):

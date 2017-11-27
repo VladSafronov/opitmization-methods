@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+
 from b_b_tools import *
 #
 cij = [[float("Inf"), 26., 42., 15., 29., 25.],
@@ -19,13 +20,18 @@ cij = [[float("Inf"), 26., 42., 15., 29., 25.],
 n = len(cij)
 
 matrix = np.matrix(cij)
-matr = Matrix(matrix,head_estimate=47)
+matr = Matrix(matrix)
+
 matr.log=True
 
 l_r = matr.first_compute()
+
 l_r = l_r["left"].compute2()
 l_r = l_r["left"].compute2()
+
+#Errors in estmate on this steps
 l_r = l_r["left"].compute2()
 l_r = l_r["left"].compute2()
+_r = l_r["left"].compute2()
 
 print()
