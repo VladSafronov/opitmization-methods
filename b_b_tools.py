@@ -1,5 +1,5 @@
 import numpy as np
-
+import math
 
 
 class Matrix(object):
@@ -15,9 +15,9 @@ class Matrix(object):
     #If you doesn't move to node
     right_estimate = None
     right_matrix_state = None
-    path = []
+    path = None
 
-    def __init__(self,matrix,row_mapping=None,column_mapping=None,head_estimate=None):
+    def __init__(self,matrix,row_mapping=None,column_mapping=None,head_estimate=None,path=None):
 
         if(row_mapping is None) and (column_mapping is None):
             self.column_mapping = list(range(len(matrix)))
@@ -30,6 +30,11 @@ class Matrix(object):
             self.head_estimate = head_estimate
 
         self.matrix = matrix.copy()
+
+        if path is None:
+            self.path = []
+        else:
+            self.path = path[:]
 
     def pos_of_max_penaltie(self):
 
@@ -56,7 +61,7 @@ class Matrix(object):
         readable_for_delete = (self.row_mapping[for_delete[0]],self.column_mapping[for_delete[1]])
         max_penaltie = list(pos_of_max.values())[0]
 
-        print(readable_for_delete)
+        #print(readable_for_delete)
         #For negative
         ######################################################3
         negative_matrix = Matrix(self.matrix.copy(),row_mapping=self.row_mapping,column_mapping=self.column_mapping)
@@ -75,19 +80,39 @@ class Matrix(object):
         positive_estimate = head_border + left_second_head_border
         left_matrix = Matrix(self.matrix,row_mapping=self.row_mapping,column_mapping=self.column_mapping,head_estimate=positive_estimate)
         left_matrix.path.append((readable_for_delete,True))
-        return {"left":left_matrix,"right":negative_matrix}
 
+
+        return {"left":left_matrix,"right":negative_matrix,"size":len(left_matrix.matrix)}
+
+
+    def compute3(self):
+        if(self.matrix.A[0][0]==float("inf") or math.isnan(self.matrix.A[0][0])):
+            left_border = self.head_estimate
+        else:
+            left_border = self.head_estimate + self.matrix.A[0][0]
+
+        left_matrix = Matrix(self.matrix, self.row_mapping, self.column_mapping, left_border, self.path)
+        left_matrix.path.append({(self.row_mapping[0],self.column_mapping[0]):True})
+
+        return left_matrix
 
     def compute2(self):
-        print(self.matrix)
+        #print(self.matrix)
+        if(len(self.matrix)==1):
+            return {"size":0,"left":self.compute3()}
+
+        reduction_constants = self.reduction()
+
         pos_max = self.pos_of_max_penaltie()
         for_delete = list(pos_max.keys())[0]
         readable_for_delete = (self.row_mapping[for_delete[0]],self.column_mapping[for_delete[1]])
         right_border = self.head_estimate+list(pos_max.values())[0]
-        right_matrix = Matrix(self.matrix.copy(),self.row_mapping,self.column_mapping,right_border)
+        right_matrix_copy = self.matrix.copy()
+        right_matrix_copy.A[for_delete[0]][for_delete[1]] = float("inf")
+        right_matrix = Matrix(right_matrix_copy,self.row_mapping,self.column_mapping,right_border,self.path)
         right_matrix.path.append((readable_for_delete,False))
 
-        print((self.row_mapping[for_delete[0]], self.column_mapping[for_delete[1]]))
+        #print((self.row_mapping[for_delete[0]], self.column_mapping[for_delete[1]]))
 
         for each in self.path:
             if not (each[1]):
@@ -102,14 +127,17 @@ class Matrix(object):
 
         self.deleteRowAndColumn(for_delete[0], for_delete[1])
 
-
         reduction_constants = self.reduction()
 
-        left_estimate = self.head_estimate+np.array(reduction_constants).sum()
-        left_matrix = Matrix(self.matrix,self.row_mapping,self.column_mapping,left_estimate)
+        left_estimate = self.head_estimate
+        reduce_sum = np.array(reduction_constants).sum()
+        if not (math.isnan(reduce_sum) or reduce_sum==float("inf")):
+            left_estimate += reduce_sum
+
+        left_matrix = Matrix(self.matrix,self.row_mapping,self.column_mapping,left_estimate,self.path)
         left_matrix.path.append((readable_for_delete,True))
 
-        return{"left":left_matrix,"right":right_matrix}
+        return{"left":left_matrix,"right":right_matrix,"size":len(left_matrix.matrix)}
 
 
     def find_by_value(self,array,value):
@@ -162,7 +190,10 @@ class Matrix(object):
 
         for i in range(len(self.matrix)):
             reduction_constant = self.matrix[i].min()
-            self.matrix[i] = self.matrix[i] - self.matrix[i].min()
+
+            if(reduction_constant!=float("Inf")):
+                self.matrix[i] = self.matrix[i] - self.matrix[i].min()
+
 
             reduction_constants.append(reduction_constant)
 
@@ -170,7 +201,8 @@ class Matrix(object):
 
         for i in range(len(self.matrix)):
             reduction_constant = self.matrix[i].min()
-            self.matrix[i] = self.matrix[i] - self.matrix[i].min()
+            if (reduction_constant != float("Inf")):
+                self.matrix[i] = self.matrix[i] - self.matrix[i].min()
             reduction_constants.append(reduction_constant)
 
         self.matrix = self.matrix.transpose()
@@ -256,19 +288,3 @@ class Matrix(object):
 
         if (self.Log):
             print(self.matrix)
-
-    # #Not readable path
-    # def deletePath(self,row_number,column_number):
-    #     # row_number_after_delete = -1
-    #     # for i in range(len(self.row_mapping)):
-    #     #     if (self.row_mapping[i] == row_number):
-    #     #         row_number_after_delete = i
-    #     #
-    #     # column_number_after_delete = -1
-    #     # for i in range(len(self.column_mapping)):
-    #     #     if (self.column_mapping[i] == column_number):
-    #     #         column_number_after_delete = i
-    #     #
-    #     # if (row_number_after_delete >= 0) and (column_number_after_delete >= 0):
-    #     #     self.matrix.A[row_number_after_delete][column_number_after_delete] = float("Inf")
-    #     self.matrix.A[row_number][column_number] = float("inf")
